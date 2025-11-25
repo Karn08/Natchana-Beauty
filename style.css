@@ -67,16 +67,17 @@ p { margin-bottom: 15px; color: var(--c-text-light); }
     transition: all 0.3s ease;
     border: 2px solid var(--c-accent);
     cursor: pointer;
+    border: none;
 }
 .btn:hover {
     background-color: var(--c-accent-dark);
-    border-color: var(--c-accent-dark);
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(183, 110, 121, 0.4);
 }
 .btn.outline {
     background-color: transparent;
     color: var(--c-accent);
+    border: 2px solid var(--c-accent);
 }
 .btn.outline:hover {
     background-color: var(--c-accent);
@@ -156,6 +157,7 @@ nav ul li a:hover::after {
 
 /* --- [Hero Section] --- */
 .hero {
+    /* ใช้รูปร้านเดิม */
     background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwPrJ-Qwq0UfrMfdP1xLd6dRpg5te_HQQNc-Yxu_R3l8BrZg18EcBPpUzyiYiBZh9RhdWJxQI5cHzN2VeVQAQU-qy3W0qmCN3_sX47EqbbiKFRMMIDVVsj9xj0ibivsnQiqLn7YDg=s1360-w1360-h1020');
     background-size: cover;
     background-position: center;
@@ -224,6 +226,7 @@ nav ul li a:hover::after {
     justify-content: center;
     gap: 30px;
     flex-wrap: wrap;
+    align-items: flex-start;
 }
 
 .card {
@@ -268,12 +271,19 @@ nav ul li a:hover::after {
 }
 .price-item {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     margin-bottom: 12px;
     border-bottom: 1px dashed #eee;
-    padding-bottom: 5px;
+    padding-bottom: 8px;
 }
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
 .price-item:last-child {
     border-bottom: none;
     margin-bottom: 0;
@@ -281,21 +291,30 @@ nav ul li a:hover::after {
 .price-item .name {
     font-size: 1rem;
     color: var(--c-text);
-    font-weight: 400;
+    font-weight: 500;
 }
 .price-item .price {
     font-weight: 700;
     color: var(--c-accent);
     font-size: 1.1rem;
     white-space: nowrap;
-    margin-left: 10px;
 }
+.price-item .note {
+    font-size: 0.85rem;
+    color: #888;
+    font-style: italic;
+    margin-top: 2px;
+}
+
 .price-note {
     text-align: center;
     font-size: 0.85rem;
     color: #888;
     margin-top: 15px;
     font-style: italic;
+    background: #fcfcfc;
+    padding: 10px;
+    border-radius: 5px;
 }
 
 /* --- [Gallery] --- */
@@ -342,11 +361,71 @@ nav ul li a:hover::after {
     opacity: 1;
 }
 
-/* --- [Review Section] --- */
+/* --- [Review Section & Form] --- */
 #reviews {
     background-color: #fffafb;
     text-align: center;
 }
+
+.review-section-header {
+    max-width: 600px;
+    margin: 0 auto 40px auto;
+}
+
+/* Review Form */
+.review-form-container {
+    background: white;
+    max-width: 600px;
+    margin: 0 auto 40px auto;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    display: none; /* Hidden by default */
+}
+.review-form-container.active {
+    display: block;
+    animation: fadeInDown 0.5s ease;
+}
+
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+}
+.form-control:focus {
+    border-color: var(--c-accent);
+}
+
+/* Star Rating */
+.rating-input {
+    display: flex;
+    gap: 10px;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+.rating-input i {
+    color: #ddd;
+    transition: color 0.2s;
+}
+.rating-input i.active, .rating-input i:hover, .rating-input i:hover ~ i {
+    color: #FFD700; 
+}
+
+/* Dynamic Review Grid */
 .review-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -358,15 +437,40 @@ nav ul li a:hover::after {
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
     position: relative;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
 }
-.review-card i {
+.review-stars {
     color: #FFD700;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+.review-text {
+    font-style: italic;
+    color: #555;
+    flex-grow: 1;
+    margin-bottom: 15px;
 }
 .review-author {
-    margin-top: 15px;
     font-weight: bold;
     color: var(--c-accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.review-author::before {
+    content: '';
+    display: block;
+    width: 30px;
+    height: 2px;
+    background-color: var(--c-bg-pastel);
+}
+.review-date {
+    font-size: 0.8rem;
+    color: #aaa;
+    margin-top: 5px;
+    display: block;
 }
 
 /* --- [Contact / Footer] --- */
