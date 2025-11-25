@@ -157,8 +157,8 @@ nav ul li a:hover::after {
 
 /* --- [Hero Section] --- */
 .hero {
-    /* ใช้รูปร้านเดิม */
-    background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url('https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwPrJ-Qwq0UfrMfdP1xLd6dRpg5te_HQQNc-Yxu_R3l8BrZg18EcBPpUzyiYiBZh9RhdWJxQI5cHzN2VeVQAQU-qy3W0qmCN3_sX47EqbbiKFRMMIDVVsj9xj0ibivsnQiqLn7YDg=s1360-w1360-h1020');
+    /* เพิ่มความเข้มของพื้นหลัง (0.3 -> 0.5) เพื่อให้ตัวหนังสือชัดขึ้น */
+    background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.6)), url('https://lh3.googleusercontent.com/gps-cs-s/AG0ilSwPrJ-Qwq0UfrMfdP1xLd6dRpg5te_HQQNc-Yxu_R3l8BrZg18EcBPpUzyiYiBZh9RhdWJxQI5cHzN2VeVQAQU-qy3W0qmCN3_sX47EqbbiKFRMMIDVVsj9xj0ibivsnQiqLn7YDg=s1360-w1360-h1020');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -602,4 +602,25 @@ footer h2::after {
     .footer-content {
         flex-direction: column;
     }
+}
+
+.hero h1 {
+    color: white;
+    font-size: 4rem;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+    animation: fadeInDown 1s ease;
+}
+
+.hero p {
+    color: #ffffff; /* เปลี่ยนเป็นสีขาวล้วนเพื่อให้ตัดกับพื้นหลัง */
+    font-size: 1.4rem;
+    margin-bottom: 40px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.9); /* เพิ่มเงาดำเข้มเพื่อให้ตัวหนังสือลอยออกมา */
+    font-weight: 600; /* เพิ่มความหนาตัวอักษร */
+    animation: fadeInUp 1s ease 0.3s backwards;
+}
+
+.hero .btn {
+    animation: fadeInUp 1s ease 0.6s backwards;
 }
