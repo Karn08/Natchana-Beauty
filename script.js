@@ -2,23 +2,34 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-// --- 1. ตรวจสอบสภาพแวดล้อม (Local vs Web) ---
+// ==========================================
+// ✅ 
+// ==========================================
+const userFirebaseConfig = {
+    apiKey: "AIzaSyCqb81HxYfDrdJo9Kqovqsh_S_Lm1fcBHs",
+    authDomain: "natchana-beauty.firebaseapp.com",
+    projectId: "natchana-beauty",
+    storageBucket: "natchana-beauty.firebasestorage.app",
+    messagingSenderId: "962508104900",
+    appId: "1:962508104900:web:b46e5c2c2ef9e02d4f1591",
+    measurementId: "G-QKRNJBTE56"
+};
+// ==========================================
+
+// --- 1. ตรวจสอบสภาพแวดล้อม ---
 let isLocal = false;
 let app, auth, db, appId;
 
 try {
-    if (typeof __firebase_config !== 'undefined') {
-        const firebaseConfig = JSON.parse(__firebase_config);
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        db = getFirestore(app);
-        appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    } else {
-        // กรณีรันบน GitHub Pages หรือไม่มี Config
-        isLocal = true;
-    }
+    // ใช้ Config ของคุณ (userFirebaseConfig) เป็นหลักเสมอ
+    console.log("Connecting to Natchana Beauty Database...");
+    app = initializeApp(userFirebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    appId = 'reviews_collection'; // ใช้ชื่อนี้เพื่อความง่ายในโปรเจกต์ส่วนตัว
+
 } catch (e) {
-    console.warn("Offline/Local Mode active");
+    console.warn("Connection failed, switching to offline mode: ", e.message);
     isLocal = true;
 }
 
@@ -84,23 +95,18 @@ function renderReviews(reviewsData) {
 
 // --- 4. ฟังก์ชันเชื่อมต่อฐานข้อมูล ---
 async function initApp() {
-    // ถ้าเป็น Local Mode ให้แสดงแค่รีวิวเดิมแล้วจบเลย
     if (isLocal) {
-        console.log("Displaying static reviews only.");
         renderReviews([]);
         return;
     }
 
     try {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-            await signInAnonymously(auth);
-        }
+        // ล็อกอินแบบ Anonymous เพื่อให้เข้าถึงฐานข้อมูลได้
+        await signInAnonymously(auth); 
 
-        const reviewsRef = collection(db, 'artifacts', appId, 'public', 'data', 'reviews');
+        // เชื่อมต่อกับ Collection ชื่อ 'reviews' ในโปรเจกต์ของคุณ
+        const reviewsRef = collection(db, 'reviews'); 
 
-        // ดึงข้อมูลรีวิวแบบ Real-time
         onSnapshot(reviewsRef, (snapshot) => {
             const dbReviews = [];
             snapshot.forEach(doc => {
@@ -109,26 +115,24 @@ async function initApp() {
             renderReviews(dbReviews);
         }, (error) => {
             console.error("Error getting reviews:", error);
-            renderReviews([]); // ถ้า error ให้โชว์ของเดิม
+            // ถ้า Error เรื่อง Permission (เพราะยังไม่ได้แก้ Rules) จะยังโชว์รีวิวเดิมได้
+            renderReviews([]);
         });
 
     } catch (err) {
-        console.error("Auth error:", err);
+        console.error("Connection error:", err);
         renderReviews([]);
     }
 }
 
-// --- 5. เริ่มต้นทำงานเมื่อหน้าเว็บโหลดเสร็จ (แก้ไขปัญหาปุ่มกดไม่ติด) ---
+// --- 5. เริ่มต้นทำงาน ---
 document.addEventListener('DOMContentLoaded', function() {
     
-    // แจ้งเตือนถ้ารันผิดวิธี (เปิดไฟล์ตรงๆ)
+    // ตรวจสอบการเปิดไฟล์ (แจ้งเตือนถ้าเปิด file:// โดยตรงอาจมีปัญหาบางอย่าง แต่ส่วนใหญ่จะรอดเพราะ config ถูกต้องแล้ว)
     if (window.location.protocol === 'file:') {
-        alert('⚠️ คำแนะนำ: การเปิดไฟล์ index.html โดยตรงอาจทำให้ระบบรีวิวไม่ทำงาน\n\nกรุณาใช้ VS Code "Live Server" หรืออัปโหลดขึ้น GitHub Pages เพื่อให้ใช้งานได้สมบูรณ์ครับ');
-        // บังคับโหมด Local เพื่อให้หน้าเว็บไม่พัง
-        isLocal = true; 
+        console.warn("Running from file:// protocol. Some features might be restricted by browser security.");
     }
 
-    // เริ่มโหลดรีวิว
     initApp();
 
     // --- UI Logic: ปุ่มสลับฟอร์ม ---
@@ -176,7 +180,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateStars(value);
             });
         });
-        updateStars(5); // ค่าเริ่มต้น 5 ดาว
+        updateStars(5);
     }
 
     // --- UI Logic: ส่งแบบฟอร์ม ---
@@ -194,40 +198,31 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerText = 'กำลังส่ง...';
 
-            // ถ้าเป็นโหมดทดลอง (Local/GitHub Pages)
+            // กรณี Offline
             if (isLocal) {
                 setTimeout(() => {
-                    alert('บันทึกรีวิวสำเร็จ! (โหมดจำลอง: ข้อมูลจะแสดงผลชั่วคราว)');
-                    form.reset();
-                    updateStars(5);
-                    if(reviewFormContainer) reviewFormContainer.classList.remove('active');
-                    if(toggleBtn) toggleBtn.style.display = 'inline-block';
+                    alert('โหมดออฟไลน์: ไม่สามารถบันทึกข้อมูลได้ในขณะนี้');
                     submitBtn.disabled = false;
                     submitBtn.innerText = originalBtnText;
-                    
-                    // เพิ่มรีวิวหลอกๆ ลงหน้าจอให้เห็นทันที
-                    const mockReview = [{
-                        name: name,
-                        comment: comment,
-                        rating: rating,
-                        createdAt: Date.now()
-                    }];
-                    renderReviews(mockReview); // รีเรนเดอร์รวมกับของเดิม
-                }, 800);
+                }, 500);
                 return;
             }
 
-            // ถ้าเป็นโหมดจริง (Firebase)
-            if (!auth.currentUser) return;
+            if (!auth.currentUser) {
+                // พยายามล็อกอินอีกครั้งถ้าหลุด
+                try { await signInAnonymously(auth); } catch(e) {}
+            }
 
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'reviews'), {
+                // บันทึกลง Collection 'reviews'
+                await addDoc(collection(db, 'reviews'), {
                     name: name,
                     comment: comment,
                     rating: rating,
                     createdAt: Date.now()
                 });
 
+                alert('ขอบคุณสำหรับรีวิวครับ!');
                 form.reset();
                 updateStars(5);
                 if(reviewFormContainer) reviewFormContainer.classList.remove('active');
@@ -235,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             } catch (error) {
                 console.error("Error adding review:", error);
-                alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+                alert('บันทึกไม่สำเร็จ: กรุณาตรวจสอบว่าได้ตั้งค่า Firestore Rules เป็น "allow read, write: if true;" หรือยังครับ');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalBtnText;
@@ -243,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- UI Logic: Navbar & Lightbox (ส่วนทั่วไป) ---
+    // --- General UI Scripts ---
     const navList = document.getElementById('nav-list');
     const mobileMenuBtn = document.getElementById('mobile-menu');
     const allLinks = document.querySelectorAll('a[href^="#"]');
@@ -266,7 +261,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Lightbox
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img');
     const closeBtn = document.querySelector('.close');
