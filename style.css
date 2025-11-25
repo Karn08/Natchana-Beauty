@@ -171,34 +171,6 @@ nav ul li a:hover::after {
     color: white;
     padding: 0 20px;
 }
-    
-@media (max-width: 768px) {
-    .hero {
-        background-attachment: scroll;
-        background-position: center top;
-    }
-}
-
-.hero h1 {
-    color: white;
-    font-size: 4rem;
-    text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
-    margin-bottom: 20px;
-    animation: fadeInDown 1s ease;
-}
-
-.hero p {
-    color: #f0f0f0;
-    font-size: 1.4rem;
-    margin-bottom: 40px;
-    text-shadow: 1px 1px 5px rgba(0,0,0,0.7);
-    font-weight: 500;
-    animation: fadeInUp 1s ease 0.3s backwards;
-}
-
-.hero .btn {
-    animation: fadeInUp 1s ease 0.6s backwards;
-}
 
 /* --- [About Us] --- */
 #about {
@@ -586,7 +558,20 @@ footer h2::after {
     to {transform:scale(1)}
 }
 
-/* --- [Responsive] --- */
+/* --- [Responsive - FIX FOR IPAD/TABLET] --- */
+
+/* ⚠️ เพิ่มส่วนนี้เพื่อแก้ปัญหาภาพพื้นหลังเพี้ยนใน iPad/Tablet 
+   (ครอบคลุมหน้าจอไม่เกิน 1366px เช่น iPad Pro)
+*/
+@media (max-width: 1366px) {
+    .hero {
+        background-attachment: scroll; /* เปลี่ยนเป็น scroll แทน fixed */
+        background-position: center center;
+        background-size: cover;
+    }
+}
+
+/* กฎเดิมสำหรับ Mobile เล็กๆ (ยังคงไว้) */
 @media (max-width: 768px) {
     .menu-toggle {
         display: block;
