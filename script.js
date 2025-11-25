@@ -3,7 +3,7 @@ import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "h
 import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
 // ==========================================
-// ✅ 
+// ✅ Config ของคุณ (ใช้ได้จริง)
 // ==========================================
 const userFirebaseConfig = {
     apiKey: "AIzaSyCqb81HxYfDrdJo9Kqovqsh_S_Lm1fcBHs",
@@ -21,15 +21,12 @@ let isLocal = false;
 let app, auth, db, appId;
 
 try {
-    // ใช้ Config ของคุณ (userFirebaseConfig) เป็นหลักเสมอ
-    console.log("Connecting to Natchana Beauty Database...");
     app = initializeApp(userFirebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    appId = 'reviews_collection'; // ใช้ชื่อนี้เพื่อความง่ายในโปรเจกต์ส่วนตัว
-
+    appId = 'reviews_collection'; 
 } catch (e) {
-    console.warn("Connection failed, switching to offline mode: ", e.message);
+    console.warn("Connection failed: ", e.message);
     isLocal = true;
 }
 
@@ -55,16 +52,27 @@ const staticReviews = [
     }
 ];
 
-// --- 3. ฟังก์ชันแสดงรีวิว ---
+// --- ตัวแปรสำหรับจัดการการแสดงผลรีวิว ---
+let allLoadedReviews = []; // เก็บรีวิวทั้งหมดไว้ที่นี่
+let isShowAll = false;     // สถานะว่ากำลังแสดงทั้งหมดอยู่หรือไม่
+
+// --- 3. ฟังก์ชันแสดงรีวิว (ปรับปรุงใหม่) ---
 function renderReviews(reviewsData) {
     const reviewsContainer = document.getElementById('dynamic-reviews');
+    // หาปุ่มดูเพิ่มเดิม (ถ้ามี) แล้วลบออกก่อนสร้างใหม่
+    let seeMoreBtn = document.getElementById('see-more-reviews-btn');
+    if(seeMoreBtn) seeMoreBtn.remove();
+
     if (!reviewsContainer) return;
     
-    const allReviews = [...reviewsData, ...staticReviews];
-    // เรียงลำดับ: ใหม่ -> เก่า
-    allReviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    // รวมรีวิวและเรียงลำดับ
+    allLoadedReviews = [...reviewsData, ...staticReviews];
+    allLoadedReviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
-    reviewsContainer.innerHTML = allReviews.map(review => {
+    // ตัดสินใจว่าจะแสดงกี่อัน
+    const reviewsToShow = isShowAll ? allLoadedReviews : allLoadedReviews.slice(0, 3);
+
+    reviewsContainer.innerHTML = reviewsToShow.map(review => {
         let starsHtml = '';
         for (let i = 1; i <= 5; i++) {
             if (review.rating >= i) {
@@ -91,6 +99,27 @@ function renderReviews(reviewsData) {
             </div>
         `;
     }).join('');
+
+    // เพิ่มปุ่ม "ดูทั้งหมด" ถ้ามีรีวิวมากกว่า 3 อัน
+    if (allLoadedReviews.length > 3) {
+        const btnContainer = document.createElement('div');
+        btnContainer.id = 'see-more-reviews-btn';
+        btnContainer.style.textAlign = 'center';
+        btnContainer.style.gridColumn = '1 / -1'; // ให้ปุ่มอยู่กลางกินพื้นที่เต็มแถว
+        btnContainer.style.marginTop = '20px';
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn outline';
+        btn.innerText = isShowAll ? 'ย่อรีวิว' : `ดูรีวิวทั้งหมด (${allLoadedReviews.length})`;
+        
+        btn.onclick = () => {
+            isShowAll = !isShowAll;
+            renderReviews(reviewsData); // เรียกฟังก์ชันตัวเองซ้ำเพื่อรีเรนเดอร์
+        };
+
+        btnContainer.appendChild(btn);
+        reviewsContainer.parentNode.insertBefore(btnContainer, reviewsContainer.nextSibling);
+    }
 }
 
 // --- 4. ฟังก์ชันเชื่อมต่อฐานข้อมูล ---
@@ -101,10 +130,7 @@ async function initApp() {
     }
 
     try {
-        // ล็อกอินแบบ Anonymous เพื่อให้เข้าถึงฐานข้อมูลได้
         await signInAnonymously(auth); 
-
-        // เชื่อมต่อกับ Collection ชื่อ 'reviews' ในโปรเจกต์ของคุณ
         const reviewsRef = collection(db, 'reviews'); 
 
         onSnapshot(reviewsRef, (snapshot) => {
@@ -112,10 +138,10 @@ async function initApp() {
             snapshot.forEach(doc => {
                 dbReviews.push({ id: doc.id, ...doc.data() });
             });
+            // ส่งข้อมูลดิบไปให้ฟังก์ชันจัดการต่อ
             renderReviews(dbReviews);
         }, (error) => {
             console.error("Error getting reviews:", error);
-            // ถ้า Error เรื่อง Permission (เพราะยังไม่ได้แก้ Rules) จะยังโชว์รีวิวเดิมได้
             renderReviews([]);
         });
 
@@ -127,14 +153,10 @@ async function initApp() {
 
 // --- 5. เริ่มต้นทำงาน ---
 document.addEventListener('DOMContentLoaded', function() {
-    
-    // ตรวจสอบการเปิดไฟล์ (แจ้งเตือนถ้าเปิด file:// โดยตรงอาจมีปัญหาบางอย่าง แต่ส่วนใหญ่จะรอดเพราะ config ถูกต้องแล้ว)
-    if (window.location.protocol === 'file:') {
-        console.warn("Running from file:// protocol. Some features might be restricted by browser security.");
-    }
-
     initApp();
 
+    // ... (UI Logic อื่นๆ เหมือนเดิม ไม่ต้องแก้) ...
+    
     // --- UI Logic: ปุ่มสลับฟอร์ม ---
     const toggleBtn = document.getElementById('toggle-review-btn');
     const reviewFormContainer = document.getElementById('review-form');
@@ -198,23 +220,16 @@ document.addEventListener('DOMContentLoaded', function() {
             submitBtn.disabled = true;
             submitBtn.innerText = 'กำลังส่ง...';
 
-            // กรณี Offline
             if (isLocal) {
                 setTimeout(() => {
-                    alert('โหมดออฟไลน์: ไม่สามารถบันทึกข้อมูลได้ในขณะนี้');
+                    alert('โหมดออฟไลน์: ไม่สามารถบันทึกข้อมูลได้');
                     submitBtn.disabled = false;
                     submitBtn.innerText = originalBtnText;
                 }, 500);
                 return;
             }
 
-            if (!auth.currentUser) {
-                // พยายามล็อกอินอีกครั้งถ้าหลุด
-                try { await signInAnonymously(auth); } catch(e) {}
-            }
-
             try {
-                // บันทึกลง Collection 'reviews'
                 await addDoc(collection(db, 'reviews'), {
                     name: name,
                     comment: comment,
@@ -230,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             } catch (error) {
                 console.error("Error adding review:", error);
-                alert('บันทึกไม่สำเร็จ: กรุณาตรวจสอบว่าได้ตั้งค่า Firestore Rules เป็น "allow read, write: if true;" หรือยังครับ');
+                alert('บันทึกไม่สำเร็จ');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerText = originalBtnText;
